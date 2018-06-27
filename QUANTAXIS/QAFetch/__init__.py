@@ -37,7 +37,7 @@ from QUANTAXIS.QAFetch import QATdx as QATdx
 from QUANTAXIS.QAFetch import QAThs as QAThs
 from QUANTAXIS.QAFetch import QACrawler as QACL
 from QUANTAXIS.QAFetch import QAEastMoney as QAEM
-
+from QUANTAXIS.QAFetch import QAfinancial
 def use(package):
     if package in ['wind']:
         try:
@@ -190,7 +190,10 @@ def QA_fetch_get_future_transaction(package,code,start,end):
 
 
 
-def QA_fetch_get_future_transaction_realtime(package,code,start,end):
+def QA_fetch_get_future_transaction_realtime(package,code):
+    """
+    期货实时tick
+    """
     Engine = use(package)
     if package in ['tdx', 'pytdx']:
         return Engine.QA_fetch_get_future_transaction_realtime(code)

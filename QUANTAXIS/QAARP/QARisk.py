@@ -127,16 +127,27 @@ class QA_Risk():
     @property
     @lru_cache()
     def market_value(self):
-        """每日持仓市值表
+        """每日每个股票持仓市值表
 
         Returns:
             pd.DataFrame -- 市值表
         """
 
         if self.if_fq:
-            return self.market_data.to_qfq().pivot('close') * self.account.daily_hold
+            return self.market_data.to_qfq().pivot('close').fillna(method='ffill') * self.account.daily_hold
         else:
-            self.market_data.pivot('close') * self.account.daily_hold
+            self.market_data.pivot('close').fillna(method='ffill') * self.account.daily_hold
+
+    @property
+    @lru_cache()
+    def daily_market_value(self):
+        """每日持仓总市值表
+
+        Returns:
+            pd.DataFrame -- 市值表
+        """
+
+        return self.market_value.sum(axis=1)
 
     @property
     def assets(self):
@@ -551,23 +562,24 @@ class QA_Performance():
         pair_title = ['code', 'sell_date', 'buy_date',
                       'amount', 'sell_price', 'buy_price']
         pnl = pd.DataFrame(pair_table, columns=pair_title).set_index('code')
+
         pnl = pnl.assign(pnl_ratio=(pnl.sell_price/pnl.buy_price) -
-                         1)
-        pnl = pnl.assign(pnl_money=pnl.pnl_ratio*pnl.amount)
+                         1).assign(buy_date=pd.to_datetime(pnl.buy_date)).assign(sell_date=pd.to_datetime(pnl.sell_date))
+        pnl = pnl.assign(pnl_money=(pnl.sell_price-pnl.buy_price)*pnl.amount)
         return pnl
 
     def plot_pnlratio(self, pnl):
         """
         画出pnl比率散点图
         """
-        plt.scatter(x=pnl.sell_date, y=pnl.pnl_ratio)
+        plt.scatter(x=pnl.sell_date.apply(str), y=pnl.pnl_ratio)
         plt.show()
 
     def plot_pnlmoney(self, pnl):
         """
         画出pnl盈亏额散点图
         """
-        plt.scatter(x=pnl.sell_date, y=pnl.pnl_money)
+        plt.scatter(x=pnl.sell_date.apply(str), y=pnl.pnl_money)
         plt.show()
 
     def abnormal_active(self):

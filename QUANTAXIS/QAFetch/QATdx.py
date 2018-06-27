@@ -32,7 +32,7 @@ from QUANTAXIS.QAUtil import (QA_util_date_stamp, QA_util_date_str2int,
                               QA_util_date_valid, QA_util_get_real_date,
                               QA_util_get_real_datelist, QA_util_get_trade_gap,
                               QA_util_log_info, QA_util_time_stamp,
-                              QA_util_web_ping, future_ip_list, stock_ip_list,
+                              QA_util_web_ping, future_ip_list, stock_ip_list, exclude_from_stock_ip_list, QA_Setting,
                               trade_date_sse)
 
 from QUANTAXIS.QAFetch.base import _select_market_code, _select_type
@@ -68,6 +68,15 @@ def ping(ip, port=7709, type_='stock'):
 
 def select_best_ip():
     QA_util_log_info('Selecting the Best Server IP of TDX')
+
+    # 删除exclude ip
+    import json
+    qasetting = QA_Setting()
+    excludejson = {'ip': '1.1.1.1', 'port': 7709}
+    alist = []
+    alist.append(excludejson)
+    ipexclude = qasetting.get_config(section='IPLIST', option='exclude', default_value=alist)
+    exclude_from_stock_ip_list(json.loads(ipexclude))
 
     data_stock = [ping(x['ip'], x['port'], 'stock') for x in stock_ip_list]
     data_future = [ping(x['ip'], x['port'], 'future') for x in future_ip_list]
@@ -918,7 +927,21 @@ api.get_history_transaction_data(31, "00020", 20170810)
 首先会初始化/存储一个代码对应表 extension_market_info
 
 """
-
+def QA_fetch_get_extensionmarket_info(ip=None,port=None):
+    global best_ip
+    if ip is None and port is None and best_ip['future']['ip'] is None and best_ip['future']['port'] is None:
+        best_ip = select_best_ip()
+        ip = best_ip['future']['ip']
+        port = best_ip['future']['port']
+    elif ip is None and port is None and best_ip['future']['ip'] is not None and best_ip['future']['port'] is not None:
+        ip = best_ip['future']['ip']
+        port = best_ip['future']['port']
+    else:
+        pass
+    apix = TdxExHq_API()
+    with apix.connect(ip, port):
+        market_info = apix.to_df(apix.get_markets())
+        return market_info
 
 def QA_fetch_get_future_list(ip=None, port=None):
     '期货代码list'
@@ -1150,7 +1173,7 @@ def QA_fetch_get_future_realtime(code, ip=None, port=None):
         #                's_vol', 'b_vol', 'vol', 'ask1', 'ask_vol1', 'bid1', 'bid_vol1', 'ask2', 'ask_vol2',
         #                'bid2', 'bid_vol2', 'ask3', 'ask_vol3', 'bid3', 'bid_vol3', 'ask4',
         #                'ask_vol4', 'bid4', 'bid_vol4', 'ask5', 'ask_vol5', 'bid5', 'bid_vol5']]
-        return _data.set_index('code', drop=False, inplace=False)
+        return __data.set_index('code', drop=False, inplace=False)
 
 
 def QA_fetch_get_wholemarket_list():

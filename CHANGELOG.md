@@ -3,7 +3,13 @@
 <!-- TOC -->
 
 - [QUANTAXIS 更新纪要](#quantaxis-更新纪要)
-    - [1.0.52 (unreleased)](#1052-unreleased)
+    - [1.0.58 (unreleased)](#1058-unreleased)
+    - [1.0.57](#1057)
+    - [1.0.56](#1056)
+    - [1.0.55](#1055)
+    - [1.0.54](#1054)
+    - [1.0.53](#1053)
+    - [1.0.52](#1052)
     - [1.0.51](#1051)
     - [1.0.50](#1050)
     - [1.0.49](#1049)
@@ -33,9 +39,63 @@
     - [1.0.25](#1025)
 
 <!-- /TOC -->
-## 1.0.52 (unreleased)
 
+## 1.0.58 (unreleased)
+1. QA_Account 增加hold_time属性, 显示持仓时间
+2. 对于QA_Query 的 QA_fetch_financialfiles进行修改, 优化返回结果
+3. QA_DataStruct_Block 修改了get_block方法, 可以获取多个block_name
+4. 修改了financialdicts里面,两个重复的净利润,将现金流量表中的改成netProfitFromOperatingActivities
+5. QA_SU_save_stock_info_tushare加到主函数中
+6. QAAnalysis_Block细微修改,增加__repr__
+7. 文档增加回测和测试账户部分(Documents/)
+8. 增加指数装饰器@QDS_IndexDayWarpper, @QDS_IndexMinWarpper
+9. 更新jupyter的文档(Documents/usejupyter.md)
 
+## 1.0.57 
+
+1. 重新修改了依赖项
+released in : JUNE 24, 2018
+
+## 1.0.56 
+1. 优化了 'crawl eastmoney zjlx all' 获取东方财富资金流向的操作，保存到mongodb数据库中
+2. @pchaos 完善了通过配置文件排除ip(某些ip长期BAD RESPONSE),同时补充一个requirements
+3. 实盘易单账户测试完毕
+4. 期货实时tick的接口修复
+5. 数据获取QAFetch的jupyter例子更新(jupyterexample/QAFetch.ipynb)
+6. 修改ORDER_MODEL 中的对应values为 大写
+7. 增加实盘易broker的query_clients方法
+8. 修改了QAWeb的获取数据优先级,避免在无mongodb的时候的```connection timeout```问题
+9. QA_Account 修改了两个函数(```account.get_history(start,end)``` 获取历史成交,```hold_table``` 修改去除0持仓的股票 )
+10. QA_Risk 增加一个property(```risk.daily_market_value```每日总市值)
+11. 优化了Backtest_broker的market_data的判定,加入series的支持
+released in : JUNE 24, 2018
+
+## 1.0.55
+
+优化了save financialfiles 的逻辑
+released in : JUNE 18, 2018
+
+## 1.0.54
+
+优化了save financialfiles 的逻辑
+released in : JUNE 17, 2018
+
+## 1.0.53
+
+优化了save financialfiles 的逻辑
+released in : JUNE 17, 2018
+
+## 1.0.52 
+
+1. @几何提交了 比特币部分的爬虫
+2. QAWEB部分后台增加了基于account_cookie的查询(ip:port/accounts?account_cookie=xxx)
+3. @几何 优化了setup.py文件
+4. 财务数据的存储,获取
+5. QA_fetch_financial_report
+6. QACLI--> save financialfiles
+7. QASU.QA_SU_save_financial_files()
+
+released in : JUNE 17, 2018
 
 ## 1.0.51 
 

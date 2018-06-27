@@ -25,10 +25,11 @@
 import json
 import os
 import configparser
+import json
 from QUANTAXIS.QASU.user import QA_user_sign_in
 from QUANTAXIS.QAUtil.QALocalize import qa_path, setting_path
 from QUANTAXIS.QAUtil.QASql import QA_util_sql_mongo_setting
-from QUANTAXIS.QASU.save_local import qa_path
+
 
 
 # quantaxis有一个配置目录存放在 ~/.quantaxis
@@ -48,23 +49,14 @@ class QA_Setting():
 
         # 加入配置文件地址
 
-    def get_config(self):
+    def get_config(self, section='MONGODB', option='uri', default_value=DEFAULT_DB_URI):
         config = configparser.ConfigParser()
         if os.path.exists(CONFIGFILE_PATH):
             config.read(CONFIGFILE_PATH)
-            try:
-                return config.get('MONGODB', 'uri')
-            except configparser.NoSectionError:
-                config.add_section('MONGODB')
-                config.set('MONGODB', 'uri', DEFAULT_DB_URI)
-                return DEFAULT_DB_URI
-            except configparser.NoOptionError:
-                config.set('MONGODB', 'uri', DEFAULT_DB_URI)
-                return DEFAULT_DB_URI
-            finally:
+            return self.get_or_set_section(config, section, option, default_value)
 
-                with open(CONFIGFILE_PATH, 'w') as f:
-                    config.write(f)
+            # 排除某些IP
+            # self.get_or_set_section(config, 'IPLIST', 'exclude', [{'ip': '1.1.1.1', 'port': 7709}])
 
         else:
             f=open(CONFIGFILE_PATH, 'w')
@@ -73,6 +65,27 @@ class QA_Setting():
             config.write(f)
             f.close()
             return DEFAULT_DB_URI
+
+    def get_or_set_section(self, config, section, option, DEFAULT_VALUE):
+        try:
+            if type(DEFAULT_VALUE) == list:
+                val = json.dumps(DEFAULT_VALUE)
+
+            else:
+                val = DEFAULT_VALUE
+
+            return config.get(section, option)
+        except configparser.NoSectionError:
+            config.add_section(section)
+            config.set(section, option, val)
+            return val
+        except configparser.NoOptionError:
+            config.set(section, option, val)
+            return val
+        finally:
+
+            with open(CONFIGFILE_PATH, 'w') as f:
+                config.write(f)
 
     def env_config(self):
         return os.environ.get("MONGOURI", None)
@@ -101,6 +114,16 @@ class QA_Setting():
 QASETTING = QA_Setting()
 DATABASE = QASETTING.client.quantaxis
 
+def exclude_from_stock_ip_list(exclude_ip_list):
+    """ 从stock_ip_list删除列表exclude_ip_list中的ip
+
+    :param exclude_ip_list:  需要删除的ip_list
+    :return: None
+    """
+    for exc in exclude_ip_list:
+        if exc in stock_ip_list:
+            stock_ip_list.remove(exc)
+
 
 info_ip_list = [{'ip': '101.227.73.20', 'port': 7709}, {'ip': '101.227.77.254', 'port': 7709},
                 {'ip': '114.80.63.12', 'port': 7709}, {'ip': '114.80.63.35', 'port': 7709},
@@ -128,6 +151,7 @@ stock_ip_list = [{'ip': '123.125.108.24', 'port': 7709}, {'ip': '123.125.108.23'
                  {'ip': '218.9.148.108', 'port': 7709}, {'ip': '61.153.144.179', 'port': 7709},
                  {'ip': '61.153.209.138', 'port': 7709}, {'ip': '61.153.209.139', 'port': 7709},
                  {'ip': 'hq1.daton.com.cn', 'port': 7709},{'ip':'119.29.51.30','port':7709},
+                 {'ip': '114.67.61.70', 'port': 7709}, {'ip':'14.17.75.11','port':7709},
                  {'ip': '121.14.104.70', 'port': 7709}, {'ip': '121.14.104.72', 'port': 7709},
                  {'ip': '112.95.140.74', 'port': 7709}, {'ip': '112.95.140.92', 'port': 7709},
                  {'ip': '112.95.140.93', 'port': 7709}, {'ip': '114.80.149.19', 'port': 7709},
