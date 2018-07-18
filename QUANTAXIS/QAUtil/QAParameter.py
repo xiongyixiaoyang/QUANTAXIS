@@ -82,6 +82,7 @@ class ORDER_STATUS():
     203 委托成功,未完全成功
     300 刚创建订单的时候
     400 已撤单
+    401 部分撤单(比如剩余五档转撤)
     500 服务器撤单/每日结算
 
     订单生成(100) -- 进入待成交队列(300) -- 完全成交(200) -- 每日结算(500)-- 死亡
@@ -94,6 +95,7 @@ class ORDER_STATUS():
     SUCCESS_PART = 203
     QUEUED = 300  # queued 用于表示在order_queue中 实际表达的意思是订单存活 待成交
     CANCEL_ALL = 400
+    CANCEL_PART = 401
     SETTLED = 500
 
 
@@ -171,6 +173,8 @@ class MARKET_TYPE():
     比特币/加密货币市场 5
     """
     STOCK_CN = 'stock_cn'  # 中国A股
+    STOCK_CN_B = 'stock_cn_b' # 中国B股
+    STOCK_CN_D = 'stock_cn_d' # 中国D股 沪伦通
     STOCK_HK = 'stock_hk'  # 港股
     STOCK_US = 'stock_us'  # 美股
     FUTURE_CN = 'future_cn'  # 国内期货
@@ -181,6 +185,8 @@ class MARKET_TYPE():
     INDEX_CN = 'index_cn'  # 中国指数
     FUND_CN = 'fund_cn'   # 中国基金
     BOND_CN = 'bond_cn'  # 中国债券
+
+    
 
 
 class BROKER_TYPE():
@@ -215,6 +221,7 @@ class MARKET_EVENT():
     QUERY_ACCOUNT = 'query_account'
     QUERY_CASH = 'query_cash'
     QUERY_DATA = 'query_data'
+    QUERY_DEAL = 'query_deal'
 
 
 class ENGINE_EVENT():
@@ -239,6 +246,7 @@ class BROKER_EVENT():
     有加载数据的任务 load data
     撮合成交的任务 broker_trade
 
+    轮询是否有成交记录 query_deal
 
     """
     LOAD_DATA = 'load_data'
@@ -246,6 +254,7 @@ class BROKER_EVENT():
     SETTLE = 'broker_settle'
     DAILY_SETTLE = 'broker_dailysettle'
     RECEIVE_ORDER = 'receive_order'
+    QUERY_DEAL = 'query_deal'
 
 
 class ORDER_EVENT():
@@ -299,16 +308,16 @@ class DATASOURCE():
     """数据来源
     """
 
-    WIND = 'wind' # wind金融终端
-    TDB = 'tdb' # wind tdb
-    THS = 'ths' # 同花顺网页
-    TUSHARE = 'tushare' # tushare
-    TDX = 'tdx' # 通达信
-    MONGO = 'mongo' # 本地/远程Mongodb
-    EASTMONEY = 'eastmoney' # 东方财富网
-    CHOICE = 'choice' # choice金融终端
-    CCXT = 'ccxt' # github/ccxt 虚拟货币
-    LOCALFILE = 'localfile' # 本地文件
+    WIND = 'wind'  # wind金融终端
+    TDB = 'tdb'  # wind tdb
+    THS = 'ths'  # 同花顺网页
+    TUSHARE = 'tushare'  # tushare
+    TDX = 'tdx'  # 通达信
+    MONGO = 'mongo'  # 本地/远程Mongodb
+    EASTMONEY = 'eastmoney'  # 东方财富网
+    CHOICE = 'choice'  # choice金融终端
+    CCXT = 'ccxt'  # github/ccxt 虚拟货币
+    LOCALFILE = 'localfile'  # 本地文件
 
 
 class OUTPUT_FORMAT():
@@ -321,6 +330,7 @@ class OUTPUT_FORMAT():
     NDARRAY = 'ndarray'
     LIST = 'list'
     JSON = 'json'
+
 
 
 DATABASE_TABLE = {

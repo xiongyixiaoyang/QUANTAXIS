@@ -26,7 +26,7 @@ from QUANTAXIS.QASU import crawl_eastmoney as crawl_eastmoney_file
 from QUANTAXIS.QASU import save_tdx as stdx
 from QUANTAXIS.QASU import save_tdx_file as tdx_file
 from QUANTAXIS.QASU import save_tushare as sts
-from QUANTAXIS.QASU import save_local
+from QUANTAXIS.QASU import save_financialfiles
 from QUANTAXIS.QAUtil import DATABASE
 
 
@@ -85,6 +85,17 @@ def QA_SU_save_stock_day(engine, client=DATABASE):
 
     engine = select_save_engine(engine)
     engine.QA_SU_save_stock_day(client=client)
+
+
+def QA_SU_save_option_day(engine,client=DATABASE):
+    '''
+
+    :param engine:
+    :param client:
+    :return:
+    '''
+    engine = select_save_engine(engine);
+    engine.QA_SU_save_option_day(client=client)
 
 
 def QA_SU_save_stock_min(engine, client=DATABASE):
@@ -196,7 +207,7 @@ def select_save_engine(engine):
     elif engine in ['tdx']:
         return stdx
     else:
-        print('💢 Error QASU.main.py call select_save_engine with parameter %s is None of  thshare, ts, Thshare, or tdx', engine)
+        print('QA Error QASU.main.py call select_save_engine with parameter %s is None of  thshare, ts, Thshare, or tdx', engine)
 
 
 def QA_SU_save_stock_min_5(file_dir, client=DATABASE):
@@ -247,4 +258,4 @@ def QA_SU_crawl_eastmoney(action="zjlx", stockCode=None):
 
 
 def QA_SU_save_financialfiles():
-    return save_local.QA_SU_save_financial_files()
+    return save_financialfiles.QA_SU_save_financial_files()

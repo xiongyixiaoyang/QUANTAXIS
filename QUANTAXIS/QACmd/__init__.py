@@ -37,7 +37,7 @@ from QUANTAXIS.QAUtil import QA_util_log_info, QA_Setting, QA_util_mongo_initial
 from QUANTAXIS.QASU.main import (QA_SU_save_stock_list, QA_SU_save_stock_min, QA_SU_save_stock_xdxr,
                        QA_SU_save_stock_block, QA_SU_save_stock_info,QA_SU_save_stock_info_tushare,
                        QA_SU_save_stock_day, QA_SU_save_index_day, QA_SU_save_index_min,
-                       QA_SU_save_etf_day, QA_SU_save_etf_min)
+                       QA_SU_save_etf_day, QA_SU_save_etf_min, QA_SU_save_option_day, QA_SU_save_financialfiles)
 from QUANTAXIS.QASU.save_binance import QA_SU_save_binance_symbol, QA_SU_save_binance_1hour, \
                         QA_SU_save_binance_1day, QA_SU_save_binance_1min, QA_SU_save_binance
 
@@ -85,6 +85,20 @@ class CLI(cmd.Cmd):
 
     def help_examples(self):
         print('make a sample backtest framework')
+
+    def do_download_updatex(self,arg):
+        now_path = os.getcwd()
+        data = requests.get(
+            'https://raw.githubusercontent.com/QUANTAXIS/QUANTAXIS/master/config/update_x.py')
+        with open("{}{}update_x.py".format(now_path, os.sep), "wb") as code:
+            code.write(data.content)
+            
+    def do_download_updateall(self,arg):
+        now_path = os.getcwd()
+        data = requests.get(
+            'https://raw.githubusercontent.com/QUANTAXIS/QUANTAXIS/master/config/update_all.py')
+        with open("{}{}update_all.py".format(now_path, os.sep), "wb") as code:
+            code.write(data.content)
 
     def do_drop_database(self, arg):
         QA_util_mongo_initial()
@@ -182,7 +196,8 @@ class CLI(cmd.Cmd):
             命令格式：save stock_block: 保存板块 \n\
             命令格式：save stock_info : 保存tushare数据接口获取的股票列表 \n\
             命令格式：save financialfiles : 保存高级财务数据(自1996年开始) \n\
-             ----------------------------------------------------------\n\
+            命令格式：save option_day : 保存50ETF期权日线数据（不包括已经摘牌的数据） \n\
+            ----------------------------------------------------------\n\
             if you just want to save daily data just\n\
                 save all+ save stock_block+save stock_info, it about 1G data \n\
             if you want to save save the fully data including min level \n\
@@ -211,7 +226,7 @@ class CLI(cmd.Cmd):
                 # QA_SU_save_etf_day('tdx')
                 # QA_SU_save_etf_min('tdx')
                 QA_SU_save_stock_list('tdx')
-                # QA_SU_save_stock_block('tdx')
+                QA_SU_save_stock_block('tdx')
                 # QA_SU_save_stock_info('tdx')
             elif len(arg) == 1 and arg[0] == 'day':
                 if QA_Setting().client.quantaxis.user_list.find({'username': 'admin'}).count() == 0:
@@ -264,6 +279,8 @@ class CLI(cmd.Cmd):
                 QA_SU_save_binance(frequency)
             elif len(arg) == 1 and arg[0] == "huobi":
                 pass
+            elif len(arg) == 1 and arg[0] == "financialfiles":
+                QA_SU_save_financialfiles()
             else:
                 for i in arg:
                     if i == 'insert_user':

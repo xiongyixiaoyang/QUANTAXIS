@@ -587,7 +587,7 @@ class _quotation_base():
             print('QA CANNOT QUERY THIS {}'.format(context))
             pass
 
-    def groupby(self,by=None, axis=0, level=None, as_index=True, sort=False, group_keys=True, squeeze=False, observed=False, **kwargs):
+    def groupby(self,by=None, axis=0, level=None, as_index=True, sort=False, group_keys=False, squeeze=False, observed=False, **kwargs):
         """仿dataframe的groupby写法,但控制了by的code和datetime
         
         Keyword Arguments:
@@ -881,3 +881,17 @@ class _quotation_base():
             return self.dicts[(datetime.datetime.strptime(time, '%Y-%m-%d'), code)]
         elif len(time) == 19:
             return self.dicts[(datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S'), code)]
+
+
+    def fast_moving(self,pct):
+        """bar快速上涨的股票(输入pct 百分比)
+        
+        Arguments:
+            pct {[type]} -- [description]
+        
+        Returns:
+            [type] -- [description]
+        """
+
+        return self.bar_pct_change[self.bar_pct_change>pct].sort_index()
+

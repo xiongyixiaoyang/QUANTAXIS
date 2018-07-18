@@ -23,24 +23,27 @@
 # SOFTWARE.
 
 
+import datetime
+
+import numpy as np
+
 from QUANTAXIS.QAARP.QAAccount import QA_Account
 from QUANTAXIS.QAEngine.QAEvent import QA_Event
 from QUANTAXIS.QAEngine.QATask import QA_Task
 from QUANTAXIS.QAMarket.QABacktestBroker import QA_BacktestBroker
+from QUANTAXIS.QAMarket.QAOrderHandler import QA_OrderHandler
 from QUANTAXIS.QAMarket.QARandomBroker import QA_RandomBroker
 from QUANTAXIS.QAMarket.QARealBroker import QA_RealBroker
 from QUANTAXIS.QAMarket.QAShipaneBroker import QA_SPEBroker
 from QUANTAXIS.QAMarket.QASimulatedBroker import QA_SimulatedBroker
 from QUANTAXIS.QAMarket.QATrade import QA_Trade
+from QUANTAXIS.QAUtil.QALogs import QA_util_log_info
 from QUANTAXIS.QAUtil.QAParameter import (ACCOUNT_EVENT, AMOUNT_MODEL,
                                           BROKER_EVENT, BROKER_TYPE,
-                                          ENGINE_EVENT, MARKET_EVENT,
-                                          FREQUENCE, ORDER_EVENT,
+                                          ENGINE_EVENT, FREQUENCE,
+                                          MARKET_EVENT, ORDER_EVENT,
                                           ORDER_MODEL, RUNNING_ENVIRONMENT)
-from QUANTAXIS.QAUtil.QALogs import QA_util_log_info
 from QUANTAXIS.QAUtil.QARandom import QA_util_random_with_topic
-
-import datetime
 
 
 class QA_Market(QA_Trade):
@@ -53,7 +56,13 @@ class QA_Market(QA_Trade):
     session 保存的是 QAAccout 对象
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, if_start_orderthreading=False, *args, **kwargs):
+        """[summary]
+
+        Keyword Arguments:
+            if_start_orderthreading {bool} -- 是否在初始化的时候开启查询子线程(实盘需要) (default: {False})
+        """
+
         super().__init__()
         # 以下是待初始化的账户session
         self.session = {}
@@ -68,6 +77,8 @@ class QA_Market(QA_Trade):
         self.broker = {}
         self.running_time = None
         self.last_query_data = None
+        self.if_start_orderthreading = if_start_orderthreading
+        self.order_handler = False
 
     def __repr__(self):
         '''
@@ -106,6 +117,11 @@ class QA_Market(QA_Trade):
 
     def start(self):
         self.trade_engine.start()
+        if self.if_start_orderthreading:
+            """查询子线程开关
+            """
+            self.start_order_threading()
+
         # self.trade_engine.create_kernel('MARKET')
         # self.trade_engine.start_kernel('MARKET')
 
@@ -129,6 +145,15 @@ class QA_Market(QA_Trade):
         else:
             return False
 
+    def start_order_threading(self):
+        """开启查询子线程(实盘中用)
+        """
+
+        self.if_start_orderthreading = True
+        self.order_handler = QA_OrderHandler()
+        self.trade_engine.create_kernel('ORDER')
+        self.trade_engine.start_kernel('ORDER')
+
     def get_account(self, account_cookie):
         return self.session[account_cookie]
 
@@ -147,21 +172,21 @@ class QA_Market(QA_Trade):
         Returns:
             [type] -- [description]
         """
-        res=False
+        res = False
         if account is None:
             if account_cookie not in self.session.keys():
                 self.session[account_cookie] = QA_Account(
                     account_cookie=account_cookie, broker=broker_name)
-                if self.sync_account(broker_name,account_cookie):
-                    res=True
+                if self.sync_account(broker_name, account_cookie):
+                    res = True
 
         else:
             if account_cookie not in self.session.keys():
                 account.broker = broker_name
                 self.session[account_cookie] = account
-                if self.sync_account(broker_name,account_cookie):
-                    res= True
-                
+                if self.sync_account(broker_name, account_cookie):
+                    res = True
+
         if res:
             return res
         else:
@@ -179,7 +204,7 @@ class QA_Market(QA_Trade):
             account_id {[type]} -- [description]
         """
         try:
-            if isinstance(self.broker[broker_name],QA_BacktestBroker):
+            if isinstance(self.broker[broker_name], QA_BacktestBroker):
                 pass
             else:
                 self.session[account_cookie].sync_account(
@@ -201,7 +226,7 @@ class QA_Market(QA_Trade):
     def get_account_id(self):
         return list(self.session.keys())
 
-    def insert_order(self, account_id, amount, amount_model, time, code, price, order_model, towards, market_type, frequence, broker_name):
+    def insert_order(self, account_id, amount, amount_model, time, code, price, order_model, towards, market_type, frequence, broker_name, money=None):
         #strDbg = QA_util_random_with_topic("QA_Market.insert_order")
         #print(">-----------------------insert_order----------------------------->", strDbg)
 
@@ -209,32 +234,53 @@ class QA_Market(QA_Trade):
         if order_model in [ORDER_MODEL.CLOSE, ORDER_MODEL.NEXT_OPEN]:
             _price = self.query_data_no_wait(broker_name=broker_name, frequence=frequence,
                                              market_type=market_type, code=code, start=time)
-
-            if _price is not None and len(_price) > 0:
-                price = float(_price[0][4])
-                flag = True
+            if isinstance(_price, np.ndarray):
+                if (_price != np.array(None)).any():
+                    price = float(_price[0][4])
+                    flag = True
+                else:
+                    QA_util_log_info(
+                        'MARKET WARING: SOMEING WRONG WITH ORDER \n ')
+                    QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
+                        code, time, price, order_model, amount_model))
             else:
-                QA_util_log_info('MARKET WARING: SOMEING WRONG WITH ORDER \n ')
-                QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
-                    code, time, price, order_model, amount_model))
+                if _price is not None and len(_price) > 0:
+                    price = float(_price[0][4])
+                    flag = True
+                else:
+                    QA_util_log_info(
+                        'MARKET WARING: SOMEING WRONG WITH ORDER \n ')
+                    QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
+                        code, time, price, order_model, amount_model))
+
         elif order_model is ORDER_MODEL.MARKET:
             _price = self.query_data_no_wait(broker_name=broker_name, frequence=frequence,
                                              market_type=market_type, code=code, start=time)
-            if _price is not None and len(_price) > 0:
-                price = float(_price[0][1])
-                flag = True
+            if isinstance(_price, np.ndarray):
+                if (_price != np.array(None)).any():
+                    price = float(_price[0][1])
+                    flag = True
+                else:
+                    QA_util_log_info(
+                        'MARKET WARING: SOMEING WRONG WITH ORDER \n ')
+                    QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
+                        code, time, price, order_model, amount_model))
             else:
-                QA_util_log_info('MARKET WARING: SOMEING WRONG WITH ORDER \n ')
-                QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
-                    code, time, price, order_model, amount_model))
-
+                if _price is not None and len(_price) > 0:
+                    price = float(_price[0][1])
+                    flag = True
+                else:
+                    QA_util_log_info(
+                        'MARKET WARING: SOMEING WRONG WITH ORDER \n ')
+                    QA_util_log_info('code {} date {} price {} order_model {} amount_model {}'.format(
+                        code, time, price, order_model, amount_model))
         elif order_model is ORDER_MODEL.LIMIT:
             # if price > self.last_query_data[0][2] or price < self.last_query_data[0][3]:
             flag = True
         if flag:
             order = self.get_account(account_id).send_order(
                 amount=amount, amount_model=amount_model, time=time, code=code, price=price,
-                order_model=order_model, towards=towards)
+                order_model=order_model, towards=towards, money=money)
 
             # print("------------------------------------------------->")
             #print("order 排队")

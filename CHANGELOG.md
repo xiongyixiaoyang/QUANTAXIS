@@ -3,7 +3,15 @@
 <!-- TOC -->
 
 - [QUANTAXIS 更新纪要](#quantaxis-更新纪要)
-    - [1.0.60 (unreleased)](#1060-unreleased)
+    - [1.0.68 (unreleased)](#1068-unreleased)
+    - [1.0.67](#1067)
+    - [1.0.66](#1066)
+    - [1.0.65](#1065)
+    - [1.0.64](#1064)
+    - [1.0.63](#1063)
+    - [1.0.62](#1062)
+    - [1.0.61](#1061)
+    - [1.0.60](#1060)
     - [1.0.59](#1059)
     - [1.0.58](#1058)
     - [1.0.57](#1057)
@@ -41,7 +49,180 @@
     - [1.0.25](#1025)
 
 <!-- /TOC -->
-## 1.0.60 (unreleased)
+## 1.0.68 (unreleased)
+
+1. 更新了财务方法/财务类 QA_DataStruct_Financial
+
+    - QA.QA_fetch_financial_report(code,report_date)
+
+    其中, report_date 是需要手动指定的财务时间, 可以是单个时间,也可以是一列时间:
+    > '2018-03-31'  或者['2017-03-31','2017-06-30','2017-09-31','2017-12-31','2018-03-31']
+    > 此方法的意义在于指定特定的财务时间(如年报)
+    
+    返回的是一个MultiIndex的dataframe
+    
+    - QA.QA_fetch_financial_report_adv(code,start,end)
+
+    支持随意的跨时间索引, start 和end不用刻意指定
+
+    如果end不写,则start参数等同于report_date的用法
+
+    返回的是QA_DataStruct_Financial 类
+
+    - QA_DataStruct_Financial 类, 可以直接加载在基础方法返回的dataframe中
+
+    > QDF.get_report_by_date(code,date) 返回某个股票的某个时间点的财报
+
+    > QDF.get_key(code,date,key) 返回某个股票某个时间点的财报的某个指标
+
+
+## 1.0.67 
+
+1. 修改了版本限制 增加3.7,3.8的支持
+2. 修改qatdx, 在获取部分不加入复权处理
+3. 修改reample, 和通达信的周线.月线标准一致
+
+released in : JULY 17, 2018
+
+## 1.0.66 
+
+1. 修改series_struct 适配单个index的情景
+2. 增加马科维茨有效前沿的研究/ 增加盘中涨停分析的研究 (research/)
+3. QA_DataStruct_Stock_realtime 类发布, 支持自采样
+
+```python
+# 给一个完整版的 (包含 DataStruct合并, DataStruct包装, DataStruct_Realtime采样)
+QA.concat([QA.QA_DataStruct_Stock_min(QA.QA_DataStruct_Stock_realtime(QA.QA_fetch_quotation('000636')).resample('1min')),
+          QA.QA_DataStruct_Stock_min(QA.QA_DataStruct_Stock_realtime(QA.QA_fetch_quotation('000001')).resample('1min'))])
+```
+4. 修改了QA.QAFetch.QATushare.QA_fetch_get_stock_info(name)的返回结果
+5. @逝去的亮光 增加了LINUX环境下的CTP撤单接口
+6. 增加了日线数据的降采样 QA.QA_data_day_resample(data,'w')
+
+released in : JULY 17, 2018
+
+## 1.0.65 
+
+1. 更新了同花顺版块爬虫, 集成进```save stock_block```中
+2. 完善了读取本地通达信软件下载的数据的日线数据对比
+3. 加入对于多周期采样的处理
+4. 加入对于异步数据查询的支持(测试)
+5. 修复了一个因为数据库无数据导致返回为None, 又被np.asarray加载成 None,导致无法识别为None且无法被len()加载的问题
+
+released in : JULY 15, 2018
+
+## 1.0.64
+
+1. 修复了QA_RISK的bug
+2. 实时采集的数据,支持实时采样 (QA_fetch_quotation/QA_data_tick_resample)
+3. 修复后复权bug
+4. 增加一个default(默认ip的选项),可以在qadir/setting/config.ini中进行修改, 避免不必要的多次重复测速
+5. QA_Setting 增加 ```set_config``` 函数, 用于设置config.ini的值
+
+released in : JULY 11, 2018
+
+## 1.0.63 
+
+1. 紧急修复因为ts.get_stock_basics()获取error导致的无法存储问题
+2. 增加了对于选股的需求(选股模块.md)
+
+released in : JULY 9, 2018
+
+## 1.0.62 
+
+1. QA_DataStruct_Indicator 类增加 ```groupby``` 函数和  ```add_func```函数 ,用法和QA_DataStruct_xxxx_DAY/MIN 一致
+2. QA_DataStruct_Block 增加两个视图 ```view_code``` 和 ```view_block```
+3. QA_DataStruct_xxx_Day/Min 增加一个 ```fast_moving(pct)``` 函数, 用于表达bar的快速涨跌幅(返回series)
+4. QA_Data 增加一个 QA_DataStruct_Series() 类, 用于分析行情的series数据
+5. QA_DataStruct_Block 重写, 改成Multiindex驱动的数据格式
+6. 实现了一个快速分析全市场一段时间内异动的代码
+    ```python
+    # 引入QUANTAXIS
+    import QUANTAXIS as QA
+    # 获取全市场版块
+    block=QA.QA_fetch_stock_block_adv()
+    # 获取全市场股票
+    code=QA.QA_fetch_stock_list_adv().code.tolist()
+    # 获取全市场2018-07-05的1分钟线
+    min_data=QA.QA_fetch_stock_min_adv(code,'2018-07-05','2018-07-05','1min')
+    # 查找1分钟线bar涨幅超过3%的股票
+    L=min_data.fast_moving(0.03)
+    # 使用SeriesDataStruct加载结果
+    L1=QA.QA_DataStruct_Series(L)
+    # 查看某一个时刻的股票代码
+    L1.select_time('2018-07-05 09:33:00').code
+    # 使用版块查找这个时段的代码归属版块
+    block.get_code(L1.select_time('2018-07-05 09:31:00').code).view_block
+    block.get_code(L1.select_time('2018-07-05 09:31:00','2018-07-05 09:41:00').code).view_block
+    ```
+
+    返回
+    ```text
+    blockname
+    IP变现                     [300426]
+    ST板块                     [000953]
+    上周强势                     [300547]
+    两年新股             [002808, 300547]
+    低市净率                     [002541]
+    军民融合                     [300265]
+    创业300            [300278, 300426]
+    参股金融                     [000953]
+    国防军工             [300265, 300278]
+    小盘股              [002808, 300265]
+    已高送转             [002541, 300547]
+    户数减少                     [300042]
+    户数增加             [300278, 300547]
+    新能源车                     [300547]
+    昨日振荡                     [300265]
+    昨日涨停                     [300426]
+    昨曾涨停                     [300265]
+    昨高换手                     [601990]
+    智能机器                     [300278]
+    次新开板                     [601990]
+    次新股                      [601990]
+    皖江区域                     [002541]
+    破净资产                     [002541]
+    股权激励             [300278, 300547]
+    股权转让             [000953, 300042]
+    近期新低                     [002541]
+    送转潜力                     [300042]
+    送转超跌             [002808, 300426]
+    高质押股     [300042, 300265, 300278]
+    ```
+7. 修复了save financialfiles的代码
+8. 修复了QAWEB在非windows机器上的bug
+9. 添加了 save option_day 保存50etf期权的命令到数据库中
+10. 增加了config文件的 update_all.py 和 update_x.py 文件, 用于自动化任务管理
+11. 增加QASetting模块, 用于QUANTAXIS的设置/配置/任务管理
+
+released in : JULY 8, 2018
+
+
+## 1.0.61 
+
+1. QA_MARKET 增加订单查询子线程函数```start_order_threading```,线程名称('ORDER') (如股票无回报,需要另外开线程查询是否成交)[如果需要在初始化的时候开启: if_start_orderthreading=True]
+
+    ```python
+    threading.enumerate()
+    [<_MainThread(MainThread, started 23780)>,
+    <Thread(Thread-4, started daemon 4504)>,
+    <Heartbeat(Thread-5, started daemon 7760)>,
+    <HistorySavingThread(IPythonHistorySavingThread, started 23764)>,
+    <ParentPollerWindows(Thread-3, started daemon 17028)>,  
+    <Thread(pymongo_server_monitor_thread, started daemon 20440)>,
+    <Thread(pymongo_kill_cursors_thread, started daemon 20216)>,
+    <QA_ENGINE with ['ORDER', 'SPE_BROKER', 'BACKTEST_BROKER'] kernels>,
+    <QA_ThreadORDER  id=2226925613408>,
+    <QA_ThreadSPE_BROKER  id=2226855623648>,
+    <QA_ThreadBACKTEST_BROKER  id=2226925616992>]
+    ```
+    
+2. QA_ORDER 增加一个 ```realorder_id ``` 用于记录订单在报给交易所后返回的order_id
+3. 修复了QA_fetch_get_exchangerate_list的bug
+
+released in : JULY 4, 2018
+
+## 1.0.60 
 
 1. groupy 默认参数中 sort设置为false
 2. 加速指标运算/前后复权 (视股票数量而定,3000多只股票提速20倍)
@@ -92,7 +273,10 @@
 10. QA_MARKET 增加在注册账户的时候的交易同步(实盘/模拟盘)
 11. @yehoha 增加了对QA_DATASTRUCT的振幅的修改
 12. @zsluedem 对虚拟货币币安交易所的数据进行了优化
+13. QA_WEB 增加本地实时5挡行情接口 ip:port/marketdata/stock/price?code=xxxxxx
+14. QA_WEB 增加了对于非windows下的机器多进程的支持
 
+released in : JULY 4, 2018
 
 ## 1.0.59 
 
@@ -301,7 +485,7 @@ released in :JUNE 01, 2018
     ```
  7. 将QDS的方法暴露出来 [concat,from_tushare](https://github.com/QUANTAXIS/QUANTAXIS/blob/master/QUANTAXIS/QAData/dsmethods.py)
     QDS的装饰器主要是用于将别处获取的数据之间转化为QDS格式
-    ```
+    ```python
     import QUANTAXIS as QA
     import tushare as ts
 
