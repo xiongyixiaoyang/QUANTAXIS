@@ -94,8 +94,11 @@ def select_best_ip():
 
     ipdefault = qasetting.get_config(
         section='IPLIST', option='default', default_value=default_ip)
+
     ipdefault = eval(ipdefault) if isinstance(ipdefault, str) else ipdefault
     assert isinstance(ipdefault, dict)
+
+
     if ipdefault['stock']['ip'] == None:
 
         data_stock = [ping(x['ip'], x['port'], 'stock') for x in stock_ip_list]
@@ -125,8 +128,8 @@ def select_best_ip():
             best_future_ip = future_ip_list[data_future.index(
                 min(data_future))]
     ipbest = {'stock': best_stock_ip, 'future': best_future_ip}
-    qasetting.set_config(
-        section='IPLIST', option='default', default_value=ipbest)
+    qasetting.set_config(section='IPLIST', option='default', default_value=ipbest)
+
     QA_util_log_info('=== The BEST SERVER ===\n stock_ip {} future_ip {}'.format(
         best_stock_ip['ip'], best_future_ip['ip']))
     return ipbest
@@ -652,6 +655,16 @@ def __QA_fetch_get_stock_transaction(code, day, retry, api):
 
 
 def QA_fetch_get_stock_transaction(code, start, end, retry=2, ip=None, port=None):
+    '''
+
+    :param code: 股票代码
+    :param start: 开始日期
+    :param end:  结束日期
+    :param retry: 重新尝试次数
+    :param ip: 地址
+    :param port: 端口
+    :return:
+    '''
     '历史分笔成交 buyorsell 1--sell 0--buy 2--盘前'
     ip, port = get_mainmarket_ip(ip, port)
     api = TdxHq_API()

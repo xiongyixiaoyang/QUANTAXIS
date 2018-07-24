@@ -3,7 +3,8 @@
 <!-- TOC -->
 
 - [QUANTAXIS 更新纪要](#quantaxis-更新纪要)
-    - [1.0.68 (unreleased)](#1068-unreleased)
+    - [1.0.69 (unreleased)](#1069-unreleased)
+    - [1.0.68](#1068)
     - [1.0.67](#1067)
     - [1.0.66](#1066)
     - [1.0.65](#1065)
@@ -49,7 +50,11 @@
     - [1.0.25](#1025)
 
 <!-- /TOC -->
-## 1.0.68 (unreleased)
+## 1.0.69 (unreleased)
+
+
+
+## 1.0.68 
 
 1. 更新了财务方法/财务类 QA_DataStruct_Financial
 
@@ -75,6 +80,37 @@
 
     > QDF.get_key(code,date,key) 返回某个股票某个时间点的财报的某个指标
 
+2. 更改了两个财务字段:
+
+    - 159 流动比率: liquidityRatio  ==> currentRatio
+    - 211 流动资产比率:  liquidityRatio  ==> currentAssetsRatio
+        
+3. 使用md5计算财报数据包的更新状况,确保财报是最新状态
+4. DataStruct 更新自动降采样字段:
+
+    - DataStruct_Stock_day 增加
+        + week
+        + month
+        + year
+    - DataStruct_Stock_min 增加
+        + min5
+        + min15
+        + min30
+        + min60
+        
+    直接调用以后及可返回,如果失败,则返回None
+
+5. QADataStruct.pivot代码更新
+6. QADataStruct.to_qfq/hfq 更新
+
+( 此处切记:: 使用groupby之后的 data的index 一定要先做 remove_unused_levels()!!!)
+
+6. 添加了 QUANTAXIS_Monitor_GUI 目录，初步实现了 日周月年线下载的 PYQT5 界面。
+7. 对于DataStruct的stock_min的初始化进行了修改,之前有对datetime/code的选取, 现已经删除(dev 1)
+
+released in : July 19, 2018
+
+dev1 released in : July 20, 2018
 
 ## 1.0.67 
 
